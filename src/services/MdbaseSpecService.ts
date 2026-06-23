@@ -364,7 +364,7 @@ export class MdbaseSpecService {
 		lines.push("# Task");
 		lines.push("");
 		lines.push("This type definition describes the data schema for tasks managed by");
-		lines.push("[TaskNotes](https://github.com/callumalpass/tasknotes), an Obsidian plugin");
+		lines.push("[TaskNotes](https://github.com/MHElnour/tasknotes), an Obsidian plugin");
 		lines.push("for note-based task management.");
 		lines.push("");
 		lines.push(

@@ -5,8 +5,8 @@ import type { ReleaseNoteVersion } from "../releaseNotes";
 
 export const RELEASE_NOTES_VIEW_TYPE = "tasknotes-release-notes";
 
-const GITHUB_RELEASES_URL = "https://github.com/callumalpass/tasknotes/releases";
-const GITHUB_REPO_URL = "https://github.com/callumalpass/tasknotes";
+const GITHUB_RELEASES_URL = "https://github.com/MHElnour/tasknotes/releases";
+const GITHUB_REPO_URL = "https://github.com/MHElnour/tasknotes";
 
 /**
  * Transform parenthesized issue/PR references like (#123) or (#123, #456)

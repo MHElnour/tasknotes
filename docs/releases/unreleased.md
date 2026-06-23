@@ -35,3 +35,7 @@ When a change has user-facing documentation, include a canonical tasknotes.dev l
 ## Added
 
 - Added native generated task IDs in `TSK-xxxxxxxx` format for newly created tasks. Subtasks created or assigned through TaskNotes now store their parent's generated ID in `parent_id` while preserving the existing project link relationship.
+
+## Changed
+
+- Changed this fork's plugin identity to `tasknotes-mhelnour` so it can be installed separately from the upstream TaskNotes community plugin.

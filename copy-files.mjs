@@ -10,7 +10,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // Default copy destination - the e2e-vault in this repo
 const defaultPaths = [
-    join(__dirname, 'tasknotes-e2e-vault', '.obsidian', 'plugins', 'tasknotes'),
+    join(__dirname, 'tasknotes-e2e-vault', '.obsidian', 'plugins', 'tasknotes-mhelnour'),
 ];
 
 // Can be overridden with OBSIDIAN_PLUGIN_PATH environment variable (single path)

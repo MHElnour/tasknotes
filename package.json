@@ -1,5 +1,5 @@
 {
-	"name": "tasknotes",
+	"name": "tasknotes-mhelnour",
 	"version": "4.11.0",
 	"description": "Note-based task management with calendar, pomodoro and time-tracking integration.",
 	"main": "main.js",
@@ -48,7 +48,7 @@
 		"i18n:generate-template": "i18n-state generate-template"
 	},
 	"keywords": [],
-	"author": "",
+	"author": "MHElnour",
 	"license": "MIT",
 	"devDependencies": {
 		"@codemirror/autocomplete": "^6.19.1",

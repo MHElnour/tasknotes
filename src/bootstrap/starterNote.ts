@@ -113,7 +113,7 @@ export const STARTER_NOTE_CONTENT =
 		"## More help and extensions",
 		"",
 		"- Documentation: [tasknotes.dev](https://tasknotes.dev/)",
-		"- Problems or bugs: [open an issue on GitHub](https://github.com/callumalpass/tasknotes/issues)",
+		"- Problems or bugs: [open an issue on GitHub](https://github.com/MHElnour/tasknotes/issues)",
 		"- Companion plugins:",
 		"  - [Canvas Bases](https://tasknotes.dev/companion-plugins/canvas-bases/) adds canvas-style boards and JSON Canvas snapshots for Bases views, with optional TaskNotes badges, actions, and relationship edges.",
 		"  - [TaskNotes Workflows](https://tasknotes.dev/companion-plugins/tasknotes-workflows/) adds Markdown-defined automation for TaskNotes events, schedules, manual commands, and task actions.",
