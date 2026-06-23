@@ -11,6 +11,7 @@ TaskNotes currently models subtasks through the existing project relationship: a
 - Use `parent_id` as the child-to-parent ID frontmatter property.
 - Generate IDs in the format `TSK-xxxxxxxx`, where `xxxxxxxx` is 8 random alphanumeric characters such as `TSK-8cA562sd`.
 - Preserve the current `projects` wikilink relationship for compatibility with existing TaskNotes views and Obsidian link behavior.
+- Integrate with native TaskNotes creation paths so task IDs work with the task creation modal, natural language parsing, inline creation, API/MCP creation, plugin events, webhooks, and calendar-sync creation side effects.
 - Avoid a vault-wide migration. Existing tasks get an ID lazily when TaskNotes needs one to create or assign a subtask relationship.
 
 ## Non-Goals
@@ -19,6 +20,7 @@ TaskNotes currently models subtasks through the existing project relationship: a
 - This does not migrate all existing task files on plugin startup.
 - This does not introduce configurable ID prefixes or ID lengths.
 - This does not change recurring-task `recurrence_parent` behavior.
+- This does not prepend the generated ID to filenames or task titles. The first implementation stores the ID in frontmatter and exposes it through normal TaskNotes task objects and hooks.
 
 ## Data Model
 
@@ -58,6 +60,19 @@ The generated ID must be included in:
 - the returned `TaskInfo`,
 - cache update payloads,
 - webhook payloads and API-visible task objects through the existing task object flow.
+
+## Native Integration Requirements
+
+ID assignment must happen inside the native TaskNotes creation flow rather than in a QuickAdd, template-only, or modal-only layer. Natural language parsing should continue to produce ordinary `TaskCreationData`; ID generation runs after that parsed data is assembled and before the task file is written.
+
+Because the returned `TaskInfo` includes the generated ID, existing post-creation behavior receives the same ID-bearing task object:
+
+- plugin event emission through `EVENT_TASK_UPDATED`,
+- `task.created` webhooks,
+- task calendar sync on creation,
+- modal callbacks such as `onTaskCreated`,
+- API and MCP task creation responses,
+- inline and instant conversion flows that route through the task service.
 
 ## Subtask Creation Flow
 
