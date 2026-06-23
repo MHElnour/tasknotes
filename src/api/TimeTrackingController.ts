@@ -4,6 +4,7 @@ import { TaskService } from "../services/TaskService";
 import { TaskManager } from "../utils/TaskManager";
 import { StatusManager } from "../services/StatusManager";
 import TaskNotesPlugin from "../main";
+import { resolveTaskIdentifier } from "./taskIdentifierResolver";
  
 import { Get, Post } from "../utils/OpenAPIDecorators";
 import {
@@ -35,7 +36,7 @@ export class TimeTrackingController extends BaseController {
 				return;
 			}
 
-			const task = await this.cacheManager.getTaskInfo(taskId);
+			const task = await resolveTaskIdentifier(this.cacheManager, taskId);
 
 			if (!task) {
 				this.sendResponse(res, 404, this.errorResponse("Task not found"));
@@ -63,7 +64,7 @@ export class TimeTrackingController extends BaseController {
 				return;
 			}
 
-			const task = await this.cacheManager.getTaskInfo(taskId);
+			const task = await resolveTaskIdentifier(this.cacheManager, taskId);
 
 			if (!task) {
 				this.sendResponse(res, 404, this.errorResponse("Task not found"));
@@ -91,7 +92,7 @@ export class TimeTrackingController extends BaseController {
 				return;
 			}
 
-			const task = await this.cacheManager.getTaskInfo(taskId);
+			const task = await resolveTaskIdentifier(this.cacheManager, taskId);
 
 			if (!task) {
 				this.sendResponse(res, 404, this.errorResponse("Task not found"));
@@ -182,7 +183,7 @@ export class TimeTrackingController extends BaseController {
 				return;
 			}
 
-			const task = await this.cacheManager.getTaskInfo(taskId);
+			const task = await resolveTaskIdentifier(this.cacheManager, taskId);
 
 			if (!task) {
 				this.sendResponse(res, 404, this.errorResponse("Task not found"));

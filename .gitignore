@@ -68,6 +68,9 @@ test-results/
 tasknotes-e2e-vault/.obsidian/plugins/tasknotes/main.js
 tasknotes-e2e-vault/.obsidian/plugins/tasknotes/manifest.json
 tasknotes-e2e-vault/.obsidian/plugins/tasknotes/styles.css
+tasknotes-e2e-vault/.obsidian/plugins/tasknotes-mhelnour/main.js
+tasknotes-e2e-vault/.obsidian/plugins/tasknotes-mhelnour/manifest.json
+tasknotes-e2e-vault/.obsidian/plugins/tasknotes-mhelnour/styles.css
 .augment
 # Test output files
 jest-out.txt

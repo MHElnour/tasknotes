@@ -7,6 +7,7 @@ import { TaskManager } from "../utils/TaskManager";
 import { TaskStatsService } from "../services/TaskStatsService";
 import TaskNotesPlugin from "../main";
 import { hydrateTaskDetailsFromFile } from "../utils/taskDetails";
+import { resolveTaskIdentifier } from "./taskIdentifierResolver";
 
 import { Get, Post, Put, Delete, OpenAPI } from "../utils/OpenAPIDecorators";
 
@@ -175,7 +176,7 @@ export class TasksController extends BaseController {
 				return;
 			}
 
-			const task = await this.cacheManager.getTaskInfo(taskId);
+			const task = await resolveTaskIdentifier(this.cacheManager, taskId);
 
 			if (!task) {
 				this.sendResponse(res, 404, this.errorResponse("Task not found"));
@@ -207,7 +208,7 @@ export class TasksController extends BaseController {
 				req
 			);
 
-			const originalTask = await this.cacheManager.getTaskInfo(taskId);
+			const originalTask = await resolveTaskIdentifier(this.cacheManager, taskId);
 			if (!originalTask) {
 				this.sendResponse(res, 404, this.errorResponse("Task not found"));
 				return;
@@ -234,7 +235,7 @@ export class TasksController extends BaseController {
 				return;
 			}
 
-			const task = await this.cacheManager.getTaskInfo(taskId);
+			const task = await resolveTaskIdentifier(this.cacheManager, taskId);
 
 			if (!task) {
 				this.sendResponse(res, 404, this.errorResponse("Task not found"));
@@ -266,7 +267,7 @@ export class TasksController extends BaseController {
 				return;
 			}
 
-			const task = await this.cacheManager.getTaskInfo(taskId);
+			const task = await resolveTaskIdentifier(this.cacheManager, taskId);
 
 			if (!task) {
 				this.sendResponse(res, 404, this.errorResponse("Task not found"));
@@ -294,7 +295,7 @@ export class TasksController extends BaseController {
 				return;
 			}
 
-			const task = await this.cacheManager.getTaskInfo(taskId);
+			const task = await resolveTaskIdentifier(this.cacheManager, taskId);
 
 			if (!task) {
 				this.sendResponse(res, 404, this.errorResponse("Task not found"));
@@ -323,7 +324,7 @@ export class TasksController extends BaseController {
 			}
 
 			const { date } = await this.parseRequestBody<{ date?: string }>(req);
-			const task = await this.cacheManager.getTaskInfo(taskId);
+			const task = await resolveTaskIdentifier(this.cacheManager, taskId);
 
 			if (!task) {
 				this.sendResponse(res, 404, this.errorResponse("Task not found"));
@@ -360,7 +361,7 @@ export class TasksController extends BaseController {
 				return;
 			}
 
-			const task = await this.cacheManager.getTaskInfo(taskId);
+			const task = await resolveTaskIdentifier(this.cacheManager, taskId);
 			if (!task) {
 				this.sendResponse(res, 404, this.errorResponse("Task not found"));
 				return;

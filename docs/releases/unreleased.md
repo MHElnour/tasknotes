@@ -39,3 +39,7 @@ When a change has user-facing documentation, include a canonical tasknotes.dev l
 ## Changed
 
 - Changed this fork's plugin identity to `tasknotes-mhelnour` so it can be installed separately from the upstream TaskNotes community plugin.
+
+## Fixed
+
+- Fixed HTTP API task lookup so generated `TSK-xxxxxxxx` task IDs work in task, time-tracking, and Pomodoro endpoints.

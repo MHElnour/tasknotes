@@ -3,6 +3,7 @@ import { BaseController } from "./BaseController";
 import { TaskManager } from "../utils/TaskManager";
 import TaskNotesPlugin from "../main";
 import { PomodoroSessionHistory } from "../types";
+import { resolveTaskIdentifier } from "./taskIdentifierResolver";
  
 import { Get, Post } from "../utils/OpenAPIDecorators";
 
@@ -27,7 +28,7 @@ export class PomodoroController extends BaseController {
 
 			// Get task if taskId provided
 			if (body.taskId) {
-				const foundTask = await this.cacheManager.getTaskInfo(body.taskId);
+				const foundTask = await resolveTaskIdentifier(this.cacheManager, body.taskId);
 				if (!foundTask) {
 					this.sendResponse(res, 404, this.errorResponse("Task not found"));
 					return;
