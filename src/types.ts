@@ -452,7 +452,8 @@ export interface TaskDependency {
 }
 
 export interface TaskInfo {
-	id?: string; // Task identifier (typically same as path for API consistency)
+	id?: string; // Stable task identifier when present; older tasks may fall back to path
+	parent_id?: string; // Stable task ID for the direct parent task when this is a subtask
 	title: string;
 	status: string;
 	priority: string;

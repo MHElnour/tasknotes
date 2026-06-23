@@ -1,4 +1,5 @@
 import type { TaskInfo } from "../types";
+import { isValidTaskId } from "../services/task-service/taskIds";
 import { getSubtaskProjectAssignmentUpdate } from "./taskCreationSubtasks";
 
 export interface TaskEditSubtaskPathLike {
@@ -19,11 +20,14 @@ export interface ApplyTaskEditSubtaskChangesContext<
 	TParent extends TaskEditSubtaskParentLike,
 > {
 	parentTaskFile: TParent;
+	parentTask?: TaskInfo;
 	selectedSubtaskFiles: readonly TSubtask[];
 	initialSubtaskFiles: readonly TSubtask[];
 	getTaskInfo: (path: string) => Promise<TaskInfo | null | undefined>;
 	buildProjectReference: (parentTaskFile: TParent, subtaskPath: string) => string;
 	updateTaskProjects: (task: TaskInfo, projects: string[]) => Promise<unknown>;
+	updateTask?: (task: TaskInfo, updates: Partial<TaskInfo>) => Promise<unknown>;
+	resolveTaskId?: (task: TaskInfo) => Promise<string>;
 	onAddError?: (error: unknown, file: TSubtask) => void;
 	onRemoveError?: (error: unknown, file: TSubtask) => void;
 }
@@ -149,12 +153,28 @@ async function addTaskEditSubtaskRelation<
 		projectReference,
 		legacyReference
 	);
+	const parentId = isValidTaskId(context.parentTask?.id) ? context.parentTask.id : undefined;
+	const updates: Partial<TaskInfo> = {};
 
-	if (!updatedProjects) {
+	if (updatedProjects) {
+		updates.projects = updatedProjects;
+	}
+	if (parentId && context.resolveTaskId) {
+		updates.id = await context.resolveTaskId(subtaskInfo);
+		updates.parent_id = parentId;
+	}
+
+	if (Object.keys(updates).length === 0) {
 		return false;
 	}
 
-	await context.updateTaskProjects(subtaskInfo, updatedProjects);
+	if (context.updateTask) {
+		await context.updateTask(subtaskInfo, updates);
+	} else if (updates.projects) {
+		await context.updateTaskProjects(subtaskInfo, updates.projects);
+	} else {
+		return false;
+	}
 	return true;
 }
 
@@ -180,7 +200,18 @@ async function removeTaskEditSubtaskRelation<
 		projectReference,
 		legacyReference
 	);
+	const parentId = isValidTaskId(context.parentTask?.id) ? context.parentTask.id : undefined;
+	const updates: Partial<TaskInfo> = {
+		projects: updatedProjects,
+	};
+	if (parentId && subtaskInfo.parent_id === parentId) {
+		updates.parent_id = undefined;
+	}
 
-	await context.updateTaskProjects(subtaskInfo, updatedProjects);
+	if (context.updateTask) {
+		await context.updateTask(subtaskInfo, updates);
+	} else {
+		await context.updateTaskProjects(subtaskInfo, updatedProjects);
+	}
 	return true;
 }

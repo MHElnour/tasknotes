@@ -14,6 +14,10 @@ import { showTaskModalReminderContextMenu } from "./taskModalActionMenus";
 import { buildTaskEditChangesFromModalState } from "./taskEditChangeState";
 import { buildTaskEditFormStateFromTask } from "./taskEditFormState";
 import { applyTaskEditSubtaskChanges, hasTaskEditSubtaskChanges } from "./taskEditSubtasks";
+import {
+	ensureTaskHasGeneratedId,
+	resolveGeneratedTaskIdForUpdate,
+} from "../services/taskRelationshipActions";
 import { createTaskNotesLogger } from "../utils/tasknotesLogger";
 
 const tasknotesLogger = createTaskNotesLogger({ tag: "Modals/TaskEditModal" });
@@ -714,14 +718,20 @@ export class TaskEditModal extends TaskModal {
 	protected async applySubtaskChanges(task: TaskInfo): Promise<void> {
 		const currentTaskFile = this.app.vault.getAbstractFileByPath(task.path);
 		if (!(currentTaskFile instanceof TFile)) return;
+		const parentTask = await ensureTaskHasGeneratedId(this.plugin, task);
 
 		const result = await applyTaskEditSubtaskChanges({
+			parentTask,
 			parentTaskFile: currentTaskFile,
 			selectedSubtaskFiles: this.selectedSubtaskFiles,
 			initialSubtaskFiles: this.initialSubtaskFiles,
 			getTaskInfo: (path) => this.plugin.cacheManager.getTaskInfo(path),
 			buildProjectReference: (parentTaskFile, subtaskPath) =>
 				this.buildProjectReference(parentTaskFile, subtaskPath),
+			resolveTaskId: (subtaskInfo) =>
+				resolveGeneratedTaskIdForUpdate(this.plugin, subtaskInfo),
+			updateTask: (subtaskInfo, updates) =>
+				this.plugin.taskService.updateTask(subtaskInfo, updates),
 			updateTaskProjects: (subtaskInfo, updatedProjects) =>
 				this.plugin.updateTaskProperty(subtaskInfo, "projects", updatedProjects),
 			onAddError: (error) => {

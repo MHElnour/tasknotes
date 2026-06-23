@@ -8,6 +8,7 @@ import {
 	addTaskToProject,
 	assignTaskAsSubtask,
 	buildSubtaskCreationPrePopulatedValues,
+	ensureTaskHasGeneratedId,
 } from "../services/taskRelationshipActions";
 import { renameVaultFile } from "../services/VaultMutationService";
 import { showConfirmationModal } from "../modals/ConfirmationModal";
@@ -809,12 +810,19 @@ export class TaskContextMenu {
 			item.setTitle(this.t("contextMenus.task.createSubtask"));
 			item.setIcon("plus");
 			item.onClick(() => {
-				const taskFile = plugin.app.vault.getAbstractFileByPath(task.path);
-				if (taskFile instanceof TFile) {
-					plugin.openTaskCreationModal({
-						...buildSubtaskCreationPrePopulatedValues(plugin, task, taskFile),
-					});
-				}
+				void (async () => {
+					const taskFile = plugin.app.vault.getAbstractFileByPath(task.path);
+					if (taskFile instanceof TFile) {
+						const parentTask = await ensureTaskHasGeneratedId(plugin, task);
+						plugin.openTaskCreationModal({
+							...buildSubtaskCreationPrePopulatedValues(
+								plugin,
+								parentTask,
+								taskFile
+							),
+						});
+					}
+				})();
 			});
 		});
 

@@ -150,6 +150,52 @@ describe('TaskService', () => {
       expect(taskInfo.dateModified).toBe('2025-01-01T12:00:00Z');
     });
 
+    it("writes a generated task id to frontmatter and returned task info", async () => {
+      const { taskInfo } = await taskService.createTask({ title: "Task With ID" });
+
+      const frontmatter = getLastCreatedFrontmatter();
+      expect(frontmatter.id).toMatch(/^TSK-[A-Za-z0-9]{8}$/);
+      expect(taskInfo.id).toBe(frontmatter.id);
+      expect(mockPlugin.cacheManager.updateTaskInfoInCache).toHaveBeenCalledWith(
+        taskInfo.path,
+        expect.objectContaining({ id: frontmatter.id })
+      );
+    });
+
+    it("preserves a valid caller-provided task id", async () => {
+      const { taskInfo } = await taskService.createTask({
+        title: "Imported Task",
+        id: "TSK-AbC123xY",
+      });
+
+      const frontmatter = getLastCreatedFrontmatter();
+      expect(frontmatter.id).toBe("TSK-AbC123xY");
+      expect(taskInfo.id).toBe("TSK-AbC123xY");
+    });
+
+    it("replaces an invalid caller-provided task id", async () => {
+      const { taskInfo } = await taskService.createTask({
+        title: "Invalid Imported Task",
+        id: "Tasks/Invalid.md",
+      });
+
+      const frontmatter = getLastCreatedFrontmatter();
+      expect(frontmatter.id).toMatch(/^TSK-[A-Za-z0-9]{8}$/);
+      expect(frontmatter.id).not.toBe("Tasks/Invalid.md");
+      expect(taskInfo.id).toBe(frontmatter.id);
+    });
+
+    it("writes a valid parent_id when creating a subtask", async () => {
+      const { taskInfo } = await taskService.createTask({
+        title: "Child Task",
+        parent_id: "TSK-Parent12",
+      });
+
+      const frontmatter = getLastCreatedFrontmatter();
+      expect(frontmatter.parent_id).toBe("TSK-Parent12");
+      expect(taskInfo.parent_id).toBe("TSK-Parent12");
+    });
+
     it('should preserve wikilinks in the task title while keeping the filename safe (#1733)', async () => {
       mockPlugin.settings.storeTitleInFilename = true;
 

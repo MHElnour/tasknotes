@@ -24,6 +24,16 @@ function makePlugin() {
 		emitter: {
 			trigger: jest.fn(),
 		},
+		cacheManager: {
+			getTaskInfo: jest.fn().mockResolvedValue(null),
+			getAllTasks: jest.fn().mockResolvedValue([]),
+		},
+		taskService: {
+			updateTask: jest.fn(async (task: TaskInfo, updates: Partial<TaskInfo>) => ({
+				...task,
+				...updates,
+			})),
+		},
 		updateTaskProperty: jest.fn(
 			async (task: TaskInfo, property: keyof TaskInfo, value: unknown) => ({
 				...task,
@@ -95,9 +105,9 @@ describe("Issue #1835: current note relationship commands", () => {
 
 		const updatedTask = await assignTaskAsSubtask(plugin as any, parentFile, subtask);
 
-		expect(plugin.updateTaskProperty).toHaveBeenCalledWith(subtask, "projects", [
-			"[[Projects/Alpha]]",
-		]);
+		expect(plugin.taskService.updateTask).toHaveBeenCalledWith(subtask, {
+			projects: ["[[Projects/Alpha]]"],
+		});
 		expect(updatedTask?.projects).toEqual(["[[Projects/Alpha]]"]);
 		expect(plugin.emitter.trigger).toHaveBeenCalledWith(
 			EVENT_USER_NOTICE,
@@ -105,6 +115,59 @@ describe("Issue #1835: current note relationship commands", () => {
 				message: "contextMenus.task.organization.notices.addedAsSubtask:Subtask,Alpha",
 			})
 		);
+	});
+
+	it("does not rewrite an existing subtask link when the parent note is not a task", async () => {
+		const plugin = makePlugin();
+		const parentFile = new TFile("Projects/Alpha.md");
+		const subtask = {
+			title: "Subtask",
+			path: "Tasks/subtask.md",
+			projects: ["[[Projects/Alpha]]"],
+		} as TaskInfo;
+
+		const updatedTask = await assignTaskAsSubtask(plugin as any, parentFile, subtask);
+
+		expect(updatedTask).toBeNull();
+		expect(plugin.taskService.updateTask).not.toHaveBeenCalled();
+		expect(plugin.emitter.trigger).toHaveBeenCalledWith(
+			EVENT_USER_NOTICE,
+			expect.objectContaining({
+				message: "contextMenus.task.organization.notices.alreadySubtask",
+			})
+		);
+	});
+
+	it("writes parent_id when assigning an existing task as a subtask of a task note", async () => {
+		const plugin = makePlugin();
+		const parentFile = new TFile("Projects/Alpha.md");
+		const parentTask = {
+			id: "TSK-Parent12",
+			title: "Alpha",
+			path: parentFile.path,
+			status: "open",
+			priority: "normal",
+			archived: false,
+		} as TaskInfo;
+		const subtask = {
+			title: "Subtask",
+			path: "Tasks/subtask.md",
+			projects: [],
+		} as TaskInfo;
+		plugin.cacheManager.getTaskInfo.mockResolvedValue(parentTask);
+		plugin.cacheManager.getAllTasks.mockResolvedValue([parentTask]);
+
+		const updatedTask = await assignTaskAsSubtask(plugin as any, parentFile, subtask);
+
+		expect(plugin.taskService.updateTask).toHaveBeenCalledWith(
+			subtask,
+			expect.objectContaining({
+				id: expect.stringMatching(/^TSK-[A-Za-z0-9]{8}$/),
+				parent_id: "TSK-Parent12",
+				projects: ["[[Projects/Alpha]]"],
+			})
+		);
+		expect(updatedTask?.parent_id).toBe("TSK-Parent12");
 	});
 
 	it("does not rewrite a task that is already linked to the selected project", async () => {

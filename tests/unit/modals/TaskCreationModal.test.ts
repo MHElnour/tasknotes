@@ -407,6 +407,26 @@ describe("TaskCreationModal - Fixed Implementation", () => {
 			expect(Notice).toHaveBeenCalledWith('Task "Test Task" created successfully');
 		});
 
+		it("passes pre-populated parent_id through native task creation", async () => {
+			modal.close();
+			modal = new TaskCreationModal(createMockApp(mockApp), mockPlugin, {
+				prePopulatedValues: {
+					parent_id: "TSK-Parent12",
+				},
+			});
+			(modal as any).title = "Child Task";
+
+			await modal.handleSave();
+
+			expect(mockPlugin.taskService.createTask).toHaveBeenCalledWith(
+				expect.objectContaining({
+					title: "Child Task",
+					parent_id: "TSK-Parent12",
+				}),
+				{ applyDefaults: false }
+			);
+		});
+
 		it("should handle task creation errors", async () => {
 			(modal as any).title = "Test Task";
 			mockPlugin.taskService.createTask.mockRejectedValue(new Error("Creation failed"));

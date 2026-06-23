@@ -52,6 +52,18 @@ describe("issue #1710 subtask project inheritance", () => {
 		expect(values.tags).toBeUndefined();
 	});
 
+	it("prefills a new subtask with the parent task id when present", () => {
+		const parentFile = new TFile("Tasks/Build login page.md");
+		const values = buildSubtaskCreationPrePopulatedValues(
+			createPlugin() as never,
+			createParentTask({ id: "TSK-Parent12" }),
+			parentFile
+		);
+
+		expect(values.parent_id).toBe("TSK-Parent12");
+		expect(values.projects).toEqual(["[[Build login page]]"]);
+	});
+
 	it("uses Obsidian link text for the parent project link", () => {
 		const parentFile = new TFile("Tasks/Product Code Implementation.md");
 		const plugin = createPlugin() as never;

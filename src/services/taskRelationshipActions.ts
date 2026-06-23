@@ -4,6 +4,7 @@ import type { TaskInfo } from "../types";
 import { generateLink, parseLinkToPath } from "../utils/linkUtils";
 import { filterTaskIdentificationTags } from "../utils/taskTagFiltering";
 import { publishUserNotice } from "../core/userNotices";
+import { collectTaskIds, isValidTaskId, resolveTaskId } from "./task-service/taskIds";
 
 function translate(
 	plugin: TaskNotesPlugin,
@@ -64,6 +65,34 @@ function resolveProjectReference(
 	return trimmedReference;
 }
 
+async function collectKnownTaskIds(plugin: TaskNotesPlugin): Promise<Set<string>> {
+	const tasks = await plugin.cacheManager.getAllTasks?.();
+	return collectTaskIds(tasks ?? []);
+}
+
+export async function ensureTaskHasGeneratedId(
+	plugin: TaskNotesPlugin,
+	task: TaskInfo
+): Promise<TaskInfo> {
+	if (isValidTaskId(task.id)) {
+		return task;
+	}
+
+	const id = resolveTaskId(task.id, await collectKnownTaskIds(plugin));
+	return plugin.taskService.updateTask(task, { id });
+}
+
+export async function resolveGeneratedTaskIdForUpdate(
+	plugin: TaskNotesPlugin,
+	task: TaskInfo
+): Promise<string> {
+	if (isValidTaskId(task.id)) {
+		return task.id;
+	}
+
+	return resolveTaskId(task.id, await collectKnownTaskIds(plugin));
+}
+
 export async function addTaskToProject(
 	plugin: TaskNotesPlugin,
 	task: TaskInfo,
@@ -116,8 +145,15 @@ export async function assignTaskAsSubtask(
 	);
 	const legacyReference = `[[${parentFile.basename}]]`;
 	const subtaskProjects = Array.isArray(subtask.projects) ? subtask.projects : [];
+	const alreadyLinked =
+		subtaskProjects.includes(projectReference) || subtaskProjects.includes(legacyReference);
+	const parentTask = await plugin.cacheManager.getTaskInfo(parentFile.path);
+	const parentWithId = parentTask ? await ensureTaskHasGeneratedId(plugin, parentTask) : null;
+	const parentId = isValidTaskId(parentWithId?.id) ? parentWithId.id : undefined;
+	const needsParentId = Boolean(parentId && subtask.parent_id !== parentId);
+	const needsChildId = Boolean(parentId && !isValidTaskId(subtask.id));
 
-	if (subtaskProjects.includes(projectReference) || subtaskProjects.includes(legacyReference)) {
+	if (alreadyLinked && !needsParentId && !needsChildId) {
 		publishUserNotice(
 			plugin.emitter,
 			translate(plugin, "contextMenus.task.organization.notices.alreadySubtask")
@@ -126,8 +162,21 @@ export async function assignTaskAsSubtask(
 	}
 
 	const sanitizedProjects = subtaskProjects.filter((entry) => entry !== legacyReference);
-	const updatedProjects = [...sanitizedProjects, projectReference];
-	const updatedSubtask = await plugin.updateTaskProperty(subtask, "projects", updatedProjects);
+	const updatedProjects = alreadyLinked
+		? sanitizedProjects.length > 0
+			? sanitizedProjects
+			: subtaskProjects
+		: [...sanitizedProjects, projectReference];
+	const updates: Partial<TaskInfo> = {};
+	if (!alreadyLinked || sanitizedProjects.length !== subtaskProjects.length) {
+		updates.projects = updatedProjects;
+	}
+	if (parentId) {
+		updates.id = await resolveGeneratedTaskIdForUpdate(plugin, subtask);
+		updates.parent_id = parentId;
+	}
+
+	const updatedSubtask = await plugin.taskService.updateTask(subtask, updates);
 
 	publishUserNotice(
 		plugin.emitter,
@@ -170,6 +219,9 @@ export function buildSubtaskCreationPrePopulatedValues(
 		projects: uniqueNonEmptyStrings([...parentProjects, projectReference]),
 	};
 
+	if (isValidTaskId(parentTask.id)) {
+		values.parent_id = parentTask.id;
+	}
 	if (inheritedTags.length > 0) {
 		values.tags = inheritedTags;
 	}

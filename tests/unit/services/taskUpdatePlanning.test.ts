@@ -232,6 +232,33 @@ describe("taskUpdatePlanning", () => {
 		expect(result.finalTags).toEqual([]);
 	});
 
+	it("writes direct task id and parent_id updates to frontmatter", () => {
+		const frontmatter: Record<string, unknown> = {};
+
+		applyTaskUpdateFrontmatterChange({
+			frontmatter,
+			originalTask: createTask(),
+			updates: {
+				id: "TSK-New1234",
+				parent_id: "TSK-Parent12",
+			},
+			recurrenceUpdates: {},
+			dateModified: "2026-05-19T09:00:00.000Z",
+			fieldMapper: createFieldMapper(),
+			taskIdentification: {
+				method: "tag",
+				tag: "task",
+				propertyName: "isTask",
+				propertyValue: "true",
+			},
+			storeTitleInFilename: false,
+			updateCompletedDateInFrontmatter: jest.fn(),
+		});
+
+		expect(frontmatter.id).toBe("TSK-New1234");
+		expect(frontmatter.parent_id).toBe("TSK-Parent12");
+	});
+
 	it("builds the returned task state from the same planned mutation", () => {
 		const updated = buildUpdatedTaskFromPlan({
 			originalTask: createTask({ completedDate: undefined }),

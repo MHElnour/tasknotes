@@ -24,6 +24,7 @@ import {
 } from "../../utils/taskIdentificationFrontmatter";
 import type { UserMappedField } from "../../types/settings";
 import { createTaskNotesLogger } from "../../utils/tasknotesLogger";
+import { collectTaskIds, isValidTaskId, resolveTaskId } from "./taskIds";
 
 const tasknotesLogger = createTaskNotesLogger({ tag: "Services/TaskService/TaskCreationService" });
 
@@ -55,6 +56,7 @@ interface TaskCreationFieldMapper {
 interface TaskCreationCacheManager {
 	waitForFreshTaskData?: (file: TFile) => Promise<void>;
 	updateTaskInfoInCache(path: string, task: TaskInfo): void;
+	getAllTasks?: () => Promise<TaskInfo[]>;
 }
 
 interface TaskCreationEmitter {
@@ -143,6 +145,11 @@ export class TaskCreationService {
 			const contextsArray = taskData.contexts || [];
 			const projectsArray = taskData.projects || [];
 			let tagsArray = getFrontmatterTags(taskData.tags || []);
+			const existingTaskIds = runtime.cacheManager.getAllTasks
+				? collectTaskIds(await runtime.cacheManager.getAllTasks())
+				: new Set<string>();
+			const id = resolveTaskId(taskData.id, existingTaskIds);
+			const parent_id = isValidTaskId(taskData.parent_id) ? taskData.parent_id : undefined;
 
 			if (runtime.settings.taskIdentificationMethod === "tag") {
 				const taskTag =
@@ -182,6 +189,8 @@ export class TaskCreationService {
 			const fullPath = folder ? `${folder}/${uniqueFilename}.md` : `${uniqueFilename}.md`;
 
 			const completeTaskData: Partial<TaskInfo> = {
+				id,
+				parent_id,
 				title,
 				status,
 				priority,
@@ -289,6 +298,12 @@ export class TaskCreationService {
 			);
 			if (taskData.customFrontmatter) {
 				finalFrontmatter = { ...finalFrontmatter, ...taskData.customFrontmatter };
+			}
+			finalFrontmatter.id = id;
+			if (parent_id) {
+				finalFrontmatter.parent_id = parent_id;
+			} else {
+				delete finalFrontmatter.parent_id;
 			}
 			if (runtime.settings.storeTitleInFilename) {
 				delete finalFrontmatter[runtime.fieldMapper.toUserField("title")];

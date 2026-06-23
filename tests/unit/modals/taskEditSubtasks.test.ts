@@ -85,6 +85,40 @@ describe("taskEditSubtasks", () => {
 		});
 	});
 
+	it("writes child id and parent_id when adding a subtask through the edit modal", async () => {
+		const parentTask = createTask("Tasks/Parent.md");
+		parentTask.id = "TSK-Parent12";
+		const childTask = createTask("Tasks/add.md", ["[[Other]]"]);
+		const updateTask = jest.fn(async (task: TaskInfo, updates: Partial<TaskInfo>) => {
+			Object.assign(task, updates);
+		});
+		const updateTaskProjects = jest.fn();
+
+		const result = await applyTaskEditSubtaskChanges({
+			parentTask,
+			parentTaskFile: parentFile,
+			initialSubtaskFiles: [],
+			selectedSubtaskFiles: [{ path: "Tasks/add.md" }],
+			getTaskInfo: async () => childTask,
+			buildProjectReference: () => "[[Tasks/Parent]]",
+			resolveTaskId: async () => "TSK-Child123",
+			updateTask,
+			updateTaskProjects,
+		});
+
+		expect(updateTask).toHaveBeenCalledWith(childTask, {
+			id: "TSK-Child123",
+			parent_id: "TSK-Parent12",
+			projects: ["[[Other]]", "[[Tasks/Parent]]"],
+		});
+		expect(updateTaskProjects).not.toHaveBeenCalled();
+		expect(childTask.parent_id).toBe("TSK-Parent12");
+		expect(result).toMatchObject({
+			added: 1,
+			errors: 0,
+		});
+	});
+
 	it("skips add updates when the child already contains the project or legacy reference", async () => {
 		const tasks = new Map<string, TaskInfo>([
 			["Tasks/legacy.md", createTask("Tasks/legacy.md", ["[[Parent]]"])],

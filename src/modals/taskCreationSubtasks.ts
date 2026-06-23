@@ -1,5 +1,6 @@
 import type { TFile } from "obsidian";
 import type { TaskInfo } from "../types";
+import { isValidTaskId } from "../services/task-service/taskIds";
 
 interface PathLike {
 	path: string;
@@ -9,10 +10,13 @@ type Nullable<T> = T | null;
 
 export interface TaskCreationSubtaskAssignmentContext {
 	currentTaskFile: Nullable<TFile>;
+	parentTask?: TaskInfo;
 	subtaskFiles: readonly PathLike[];
 	getTaskInfo: (path: string) => Promise<TaskInfo | null | undefined>;
 	buildProjectReference: (currentTaskFile: TFile, subtaskPath: string) => string;
 	updateTaskProjects: (task: TaskInfo, projects: string[]) => Promise<unknown>;
+	updateTask?: (task: TaskInfo, updates: Partial<TaskInfo>) => Promise<unknown>;
+	resolveTaskId?: (task: TaskInfo) => Promise<string>;
 	onError?: (error: unknown, subtaskFile: PathLike) => void;
 }
 
@@ -54,13 +58,29 @@ export async function applyTaskCreationSubtaskAssignments(
 				projectReference,
 				getLegacyProjectReference(context.currentTaskFile)
 			);
+			const parentId = isValidTaskId(context.parentTask?.id)
+				? context.parentTask.id
+				: undefined;
+			const updates: Partial<TaskInfo> = {};
 
-			if (!nextProjects) {
+			if (nextProjects) {
+				updates.projects = nextProjects;
+			}
+			if (parentId && context.resolveTaskId) {
+				updates.id = await context.resolveTaskId(subtaskInfo);
+				updates.parent_id = parentId;
+			}
+
+			if (Object.keys(updates).length === 0) {
 				result.skipped += 1;
 				continue;
 			}
 
-			await context.updateTaskProjects(subtaskInfo, nextProjects);
+			if (context.updateTask) {
+				await context.updateTask(subtaskInfo, updates);
+			} else if (updates.projects) {
+				await context.updateTaskProjects(subtaskInfo, updates.projects);
+			}
 			result.updated += 1;
 		} catch (error) {
 			result.failed += 1;

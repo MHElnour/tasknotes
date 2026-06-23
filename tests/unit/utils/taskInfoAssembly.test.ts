@@ -20,7 +20,7 @@ describe("buildTaskInfoFromMappedTask", () => {
 	it("adds path identity and computed blocking state", () => {
 		const task = buildTaskInfoFromMappedTask({
 			path: "Tasks/current.md",
-			mappedTask: makeTask({ id: "old-id", path: "Mapped/original.md" }),
+			mappedTask: makeTask({ path: "Mapped/original.md" }),
 			defaultTaskStatus: "open",
 			isBlocked: true,
 			blockingTasks: ["Tasks/dependent.md"],
@@ -33,6 +33,24 @@ describe("buildTaskInfoFromMappedTask", () => {
 			isBlocking: true,
 			blocking: ["Tasks/dependent.md"],
 		});
+	});
+
+	it("preserves frontmatter task IDs and parent IDs when building task info", () => {
+		const task = buildTaskInfoFromMappedTask({
+			path: "Tasks/Child.md",
+			mappedTask: makeTask({
+				id: "TSK-Child123",
+				parent_id: "TSK-Parent12",
+				title: "Child",
+			}),
+			defaultTaskStatus: "open",
+			isBlocked: false,
+			blockingTasks: [],
+		});
+
+		expect(task.id).toBe("TSK-Child123");
+		expect(task.parent_id).toBe("TSK-Parent12");
+		expect(task.path).toBe("Tasks/Child.md");
 	});
 
 	it("defaults missing display fields and list fields", () => {

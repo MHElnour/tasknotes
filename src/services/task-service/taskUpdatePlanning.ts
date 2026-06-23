@@ -215,6 +215,22 @@ export function applyTaskUpdateFrontmatterChange({
 		}
 	});
 
+	if (Object.prototype.hasOwnProperty.call(updates, "id")) {
+		if (updates.id) {
+			frontmatter.id = updates.id;
+		} else {
+			delete frontmatter.id;
+		}
+	}
+
+	if (Object.prototype.hasOwnProperty.call(updates, "parent_id")) {
+		if (updates.parent_id) {
+			frontmatter.parent_id = updates.parent_id;
+		} else {
+			delete frontmatter.parent_id;
+		}
+	}
+
 	if (updates.status !== undefined) {
 		updateCompletedDateInFrontmatter(frontmatter, updates.status, !!originalTask.recurrence);
 	}

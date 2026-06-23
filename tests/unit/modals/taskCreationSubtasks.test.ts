@@ -68,6 +68,33 @@ describe("taskCreationSubtasks", () => {
 		expect(result).toEqual({ updated: 1, missing: 0, skipped: 0, failed: 0 });
 	});
 
+	it("writes child id and parent_id while preserving the project link for selected existing subtasks", async () => {
+		const parent = file("Tasks/Parent.md");
+		const child = file("Tasks/Child.md");
+		const parentTask = task(parent.path, []);
+		parentTask.id = "TSK-Parent12";
+		const childTask = task(child.path, ["[[Existing]]"]);
+		const updateTask = jest.fn().mockResolvedValue(undefined);
+
+		const result = await applyTaskCreationSubtaskAssignments({
+			currentTaskFile: parent,
+			parentTask,
+			subtaskFiles: [child],
+			getTaskInfo: async () => childTask,
+			buildProjectReference: () => "[[Tasks/Parent|Parent]]",
+			resolveTaskId: async () => "TSK-Child123",
+			updateTask,
+			updateTaskProjects: jest.fn(),
+		});
+
+		expect(updateTask).toHaveBeenCalledWith(childTask, {
+			id: "TSK-Child123",
+			parent_id: "TSK-Parent12",
+			projects: ["[[Existing]]", "[[Tasks/Parent|Parent]]"],
+		});
+		expect(result).toEqual({ updated: 1, missing: 0, skipped: 0, failed: 0 });
+	});
+
 	it("tracks missing, skipped, and failed subtask assignments while continuing", async () => {
 		const parent = file("Tasks/Parent.md");
 		const missing = file("Tasks/Missing.md");

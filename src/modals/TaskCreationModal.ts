@@ -20,6 +20,7 @@ import {
 	type TaskCreationPrepopulatedValues,
 } from "./taskCreationFormState";
 import { applyTaskCreationSubtaskAssignments } from "./taskCreationSubtasks";
+import { resolveGeneratedTaskIdForUpdate } from "../services/taskRelationshipActions";
 import { NLPSuggest } from "./taskCreationSuggest";
 import { shouldShowFilenameShortenedNotice } from "../utils/filenameGenerator";
 import { setTaskModalDetailsEditorValue } from "./taskModalDetailsEditor";
@@ -768,6 +769,9 @@ export class TaskCreationModal extends TaskModal {
 				...taskData.customFrontmatter,
 			};
 		}
+		if (this.options.prePopulatedValues?.parent_id) {
+			taskData.parent_id = this.options.prePopulatedValues.parent_id;
+		}
 
 		return taskData;
 	}
@@ -786,10 +790,15 @@ export class TaskCreationModal extends TaskModal {
 
 		await applyTaskCreationSubtaskAssignments({
 			currentTaskFile,
+			parentTask: createdTask,
 			subtaskFiles: this.selectedSubtaskFiles,
 			getTaskInfo: (path) => this.plugin.cacheManager.getTaskInfo(path),
 			buildProjectReference: (targetFile, sourcePath) =>
 				this.buildProjectReference(targetFile, sourcePath),
+			resolveTaskId: (subtaskInfo) =>
+				resolveGeneratedTaskIdForUpdate(this.plugin, subtaskInfo),
+			updateTask: (subtaskInfo, updates) =>
+				this.plugin.taskService.updateTask(subtaskInfo, updates),
 			updateTaskProjects: (subtaskInfo, projects) =>
 				this.plugin.updateTaskProperty(subtaskInfo, "projects", projects),
 			onError: (error) => {

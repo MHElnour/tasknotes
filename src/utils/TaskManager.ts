@@ -330,6 +330,18 @@ export class TaskManager extends Events {
 				path,
 				this.storeTitleInFilename
 			);
+			const frontmatterRecord =
+				frontmatter !== null &&
+				typeof frontmatter === "object" &&
+				!Array.isArray(frontmatter)
+					? (frontmatter as Record<string, unknown>)
+					: {};
+			if (typeof frontmatterRecord.id === "string") {
+				mappedTask.id = frontmatterRecord.id;
+			}
+			if (typeof frontmatterRecord.parent_id === "string") {
+				mappedTask.parent_id = frontmatterRecord.parent_id;
+			}
 
 			// Get dependency information from DependencyCache
 			let isBlocked = false;

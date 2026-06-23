@@ -102,6 +102,8 @@ Tasks store their data in YAML frontmatter with properties for status, priority,
 
 This frontmatter-first design keeps task data editable and portable while supporting consistent behavior across views and widgets.
 
+Newly created tasks also receive a stable generated `id` in frontmatter using the `TSK-xxxxxxxx` format. When TaskNotes creates or assigns a subtask, the child keeps the existing parent project wikilink and also stores the parent's generated ID in `parent_id`.
+
 For property types and examples, see [Core Concepts](../core-concepts.md#yaml-frontmatter). For configuration options, see [Task Properties Settings](../settings/task-properties.md).
 
 ## Projects

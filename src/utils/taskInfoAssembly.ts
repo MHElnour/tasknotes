@@ -22,7 +22,7 @@ export function buildTaskInfoFromMappedTask({
 
 	return {
 		...mappedTask,
-		id: path,
+		id: mappedTask.id ?? path,
 		path,
 		title: mappedTask.title || "Untitled task",
 		status: mappedTask.status || defaultTaskStatus,
