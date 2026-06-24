@@ -43,3 +43,4 @@ When a change has user-facing documentation, include a canonical tasknotes.dev l
 ## Fixed
 
 - Fixed HTTP API task lookup so generated `TSK-xxxxxxxx` task IDs work in task, time-tracking, and Pomodoro endpoints.
+- Fixed generated default Bases so time tracking is visible in a dedicated task view and plugin-storage Pomodoro history no longer creates an empty daily-note-only Pomodoro stats Base.

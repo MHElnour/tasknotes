@@ -337,7 +337,10 @@ describe("defaultBasesFiles", () => {
 	});
 
 	it("generates a Pomodoro statistics Base from daily-note Pomodoro frontmatter", () => {
-		const template = generateBasesFileTemplate("pomodoro-stats-base", createMockPlugin() as any);
+		const template = generateBasesFileTemplate(
+			"pomodoro-stats-base",
+			createMockPlugin({ pomodoroStorageLocation: "daily-notes" }) as any
+		);
 
 		expect(template).toContain("# Pomodoro statistics");
 		expect(template).toContain('file.hasProperty("pomodoros")');
@@ -348,5 +351,32 @@ describe("defaultBasesFiles", () => {
 		expect(template).toContain("formula.completedPomos: Sum");
 		expect(template).toContain("formula.focusMinutes: Sum");
 		expect(template).not.toContain('file.hasTag("task")');
+	});
+
+	it("adds a dedicated time tracking tab to the default tasks Base", () => {
+		const template = generateBasesFileTemplate("open-tasks-view", createMockPlugin() as any);
+
+		expect(template).toContain('name: "Time Tracking"');
+		expect(template).toContain("timeEntries.isEmpty() == false");
+		expect(template).toContain("timeEstimate > 0");
+		expect(template).toContain("      - formula.timeTrackedFormatted");
+		expect(template).toContain("      - formula.timeTrackedToday");
+		expect(template).toContain("      - formula.timeTrackedThisWeek");
+		expect(template).toContain("      - formula.trackingStatus");
+	});
+
+	it("generates task-focus Pomodoro stats when Pomodoro storage is plugin data", () => {
+		const template = generateBasesFileTemplate(
+			"pomodoro-stats-base",
+			createMockPlugin({ pomodoroStorageLocation: "plugin" }) as any
+		);
+
+		expect(template).toContain("# Pomodoro focus time by task");
+		expect(template).toContain("Plugin-storage Pomodoro sessions are not visible to Bases");
+		expect(template).toContain('file.hasTag("task")');
+		expect(template).toContain("timeEntries.isEmpty() == false");
+		expect(template).toContain("formula.timeTrackedFormatted");
+		expect(template).not.toContain('file.hasProperty("pomodoros")');
+		expect(template).not.toContain('note["pomodoros"]');
 	});
 });

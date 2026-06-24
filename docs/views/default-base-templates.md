@@ -247,7 +247,7 @@ views:
 
 Used by the **Tasks** command to display filtered task views.
 
-This template includes multiple views: Manual Order, All Tasks, Not Blocked, Today, Overdue, This Week, and Unscheduled. The Manual Order view groups by status and sorts by the manual-order property so drag-to-reorder works immediately in new bases. The default property name is `tasknotes_manual_order`. The remaining views keep their existing date- and urgency-focused defaults. Each filtered view (except All Tasks) filters for incomplete tasks, handling both recurring and non-recurring tasks. For recurring tasks, the generated filters normalize `complete_instances` values before checking today's date, and missing values are treated as "not completed today" so newly created recurring tasks still appear by default. The "Not Blocked" view additionally filters for tasks that are ready to work on (no incomplete blocking dependencies).
+This template includes multiple views: Manual Order, All Tasks, Not Blocked, Today, Overdue, This Week, Unscheduled, and Time Tracking. The Manual Order view groups by status and sorts by the manual-order property so drag-to-reorder works immediately in new bases. The default property name is `tasknotes_manual_order`. The Time Tracking view shows tasks with tracked time or estimates and surfaces the time-tracking formulas directly. The remaining views keep their existing date- and urgency-focused defaults. Each filtered view (except All Tasks and Time Tracking) filters for incomplete tasks, handling both recurring and non-recurring tasks. For recurring tasks, the generated filters normalize `complete_instances` values before checking today's date, and missing values are treated as "not completed today" so newly created recurring tasks still appear by default. The "Not Blocked" view additionally filters for tasks that are ready to work on (no incomplete blocking dependencies).
 The default views cover common review horizons and can be kept, removed, or cloned with modified filters.
 
 ```yaml
@@ -485,6 +485,32 @@ views:
     sort:
       - column: status
         direction: ASC
+  - type: tasknotesTaskList
+    name: "Time Tracking"
+    filters:
+      and:
+        - or:
+          - timeEntries.isEmpty() == false
+          - timeEstimate > 0
+    order:
+      - file.name
+      - status
+      - timeEstimate
+      - formula.timeTrackedFormatted
+      - formula.timeTrackedToday
+      - formula.timeTrackedThisWeek
+      - formula.timeRemaining
+      - formula.efficiencyRatio
+      - formula.trackingStatus
+      - projects
+      - contexts
+    sort:
+      - column: formula.timeTrackedToday
+        direction: DESC
+      - column: formula.timeTrackedThisWeek
+        direction: DESC
+      - column: file.mtime
+        direction: DESC
 ```
 
 ## Calendar
@@ -594,9 +620,9 @@ views:
 
 ## Pomodoro Statistics
 
-Generated alongside the default view files to summarize Pomodoro history stored in daily notes.
+Generated alongside the default view files to summarize Pomodoro history.
 
-Note: This Base only reads Pomodoro sessions written to daily note frontmatter. If your history is stored in plugin data, migrate it from **Settings → TaskNotes → Features** before using this view.
+When Pomodoro storage is set to daily notes, this Base reads Pomodoro sessions written to daily note frontmatter. When Pomodoro storage is set to plugin data, Bases cannot read the plugin data store, so the generated file instead shows task focus time from task `timeEntries`. Use the native **TaskNotes: Open Pomodoro statistics** command for full plugin-storage Pomodoro session stats.
 
 ```yaml
 # Pomodoro statistics

@@ -503,7 +503,51 @@ function insertOrderPropertyAfter(
 	return nextProperties;
 }
 
+function generateTimeTrackingPropertiesSection(): string {
+	return `properties:
+  formula.timeTrackedFormatted:
+    displayName: Time tracked
+  formula.timeTrackedToday:
+    displayName: Today
+  formula.timeTrackedThisWeek:
+    displayName: This week
+  formula.timeRemaining:
+    displayName: Remaining
+  formula.efficiencyRatio:
+    displayName: Efficiency
+  formula.trackingStatus:
+    displayName: Tracking status
+`;
+}
+
+function generateTimeTrackingOrderArray(plugin: TaskNotesPlugin): string[] {
+	const properties = [
+		"file.name",
+		mapPropertyToBasesProperty("status", plugin),
+		mapPropertyToBasesProperty("timeEstimate", plugin),
+		"formula.timeTrackedFormatted",
+		"formula.timeTrackedToday",
+		"formula.timeTrackedThisWeek",
+		"formula.timeRemaining",
+		"formula.efficiencyRatio",
+		"formula.trackingStatus",
+		mapPropertyToBasesProperty("projects", plugin),
+		mapPropertyToBasesProperty("contexts", plugin),
+	];
+
+	return properties.filter(
+		(property, index): property is string =>
+			typeof property === "string" &&
+			property.length > 0 &&
+			properties.indexOf(property) === index
+	);
+}
+
 function generatePomodoroStatsTemplate(plugin: TaskNotesPlugin): string {
+	if (plugin.settings.pomodoroStorageLocation !== "daily-notes") {
+		return generatePomodoroTaskFocusTemplate(plugin);
+	}
+
 	const pomodoroProperty = mapPropertyToBasesProperty("pomodoros", plugin);
 	const pomodoroRef = formatNotePropertyReference(pomodoroProperty);
 	const workSessions = `list(${pomodoroRef}).filter(value.type == "work")`;
@@ -598,6 +642,48 @@ views:
 `;
 }
 
+function generatePomodoroTaskFocusTemplate(plugin: TaskNotesPlugin): string {
+	const taskFilterConditions = generateTaskFilterConditions(plugin.settings)
+		.map((condition) => `    - ${condition}`)
+		.join("\n");
+	const formulasSection = generateFormulasSection(plugin);
+	const timeTrackingPropertiesSection = generateTimeTrackingPropertiesSection();
+	const timeTrackingOrderYaml = formatOrderArray(generateTimeTrackingOrderArray(plugin));
+	const timeEntriesProperty = mapPropertyToBasesProperty("timeEntries", plugin);
+	const timeEstimateProperty = mapPropertyToBasesProperty("timeEstimate", plugin);
+
+	return `# Pomodoro focus time by task
+# Generated with your TaskNotes settings
+# Plugin-storage Pomodoro sessions are not visible to Bases.
+# This Base shows task time entries created by Pomodoro/time tracking.
+# Use the TaskNotes Pomodoro statistics command for full plugin-storage session stats.
+
+filters:
+  and:
+${taskFilterConditions}
+    - or:
+      - ${timeEntriesProperty}.isEmpty() == false
+      - ${timeEstimateProperty} > 0
+
+${formulasSection}
+
+${timeTrackingPropertiesSection}
+
+views:
+  - type: tasknotesTaskList
+    name: "Focus by Task"
+    order:
+${timeTrackingOrderYaml}
+    sort:
+      - column: formula.timeTrackedToday
+        direction: DESC
+      - column: formula.timeTrackedThisWeek
+        direction: DESC
+      - column: file.mtime
+        direction: DESC
+`;
+}
+
 /**
  * Generate a Bases file template for a specific command with user settings
  */
@@ -675,6 +761,10 @@ ${orderYaml}
 			const completeInstancesProperty = mapPropertyToBasesProperty('completeInstances', plugin);
 			const blockedByProperty = mapPropertyToBasesProperty('blockedBy', plugin);
 			const sortOrderProperty = mapPropertyToBasesProperty('sortOrder', plugin);
+			const timeEntriesProperty = mapPropertyToBasesProperty('timeEntries', plugin);
+			const timeEstimateProperty = mapPropertyToBasesProperty('timeEstimate', plugin);
+			const timeTrackingOrderYaml = formatOrderArray(generateTimeTrackingOrderArray(plugin));
+			const timeTrackingPropertiesSection = generateTimeTrackingPropertiesSection();
 			const dueHasValue = `${dueProperty}.isEmpty() == false`;
 			const scheduledHasValue = `${scheduledProperty}.isEmpty() == false`;
 			const todayDay = getBasesTodayDayExpression();
@@ -708,6 +798,8 @@ ${orderYaml}
 ${formatFilterAsYAML(taskFilterConditions)}
 
 ${formulasSection}
+
+${timeTrackingPropertiesSection}
 
 views:
   - type: tasknotesTaskList
@@ -857,6 +949,22 @@ ${orderYaml}
     sort:
       - column: ${statusProperty}
         direction: ASC
+  - type: tasknotesTaskList
+    name: "Time Tracking"
+    filters:
+      and:
+        - or:
+          - ${timeEntriesProperty}.isEmpty() == false
+          - ${timeEstimateProperty} > 0
+    order:
+${timeTrackingOrderYaml}
+    sort:
+      - column: formula.timeTrackedToday
+        direction: DESC
+      - column: formula.timeTrackedThisWeek
+        direction: DESC
+      - column: file.mtime
+        direction: DESC
 `;
 		}
 
